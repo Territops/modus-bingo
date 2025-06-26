@@ -38,8 +38,52 @@
             overflow-x: hidden;
         }
 
+        /* Styles for the orientation message overlay */
+        #orientation-message-overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100%;
+            background-color: var(--bg-primary-dark);
+            color: var(--text-primary-light);
+            z-index: 5000;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .orientation-message-content p:first-child { /* Emoji */
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        .orientation-message-content p {
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+
+        @media screen and (orientation: portrait) and (max-width: 767px) {
+            #orientation-message-overlay {
+                display: flex;
+                flex-direction: column;
+            }
+            .container, .modal {
+                display: none !important;
+            }
+            body {
+                padding: 0;
+            }
+        }
+        @media screen and (orientation: landscape) and (max-height: 767px) {
+             #orientation-message-overlay {
+                display: none;
+            }
+        }
+
         .modal {
-            display: none;
             position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
             overflow: auto; background-color: rgba(0,0,0,0.75);
             align-items: center; justify-content: center;
@@ -95,7 +139,6 @@
         }
 
         .container {
-            display: none;
             max-width: 950px; margin: 0 auto; background: var(--bg-secondary-dark);
             border-radius: 20px;
             box-shadow: 0 15px 40px var(--shadow-color-dark);
@@ -204,11 +247,10 @@
             transition: opacity 0.6s ease-out 0.1s, transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) 0.1s;
             text-align: center; border: 1px solid rgba(255,255,255,0.2);
         }
-        /* Style for the emoji span */
         .win-emojis {
-            font-size: 3.5em; /* Adjust size as needed */
+            font-size: 3.5em;
             margin-bottom: 15px;
-            display: block; /* To allow margin-bottom */
+            display: block;
         }
         .win-message-active h2 {
             font-size: 2.8em; margin: 0 0 10px 0;
@@ -263,6 +305,13 @@
     </style>
 </head>
 <body>
+    <div id="orientation-message-overlay">
+        <div class="orientation-message-content">
+            <p>🔄</p>
+            <p>Please rotate your device to landscape mode for the best BINGO experience!</p>
+        </div>
+    </div>
+
     <div id="nameModal" class="modal">
         <div class="modal-content">
             <h2>🎯 Welcome to BINGO THE MODUS WAY©! 🎯</h2>
@@ -363,8 +412,6 @@
 
                     document.getElementById('playerNameDisplay').textContent = currentPlayerName;
                     document.getElementById('playerInfo').style.display = 'inline';
-                    document.getElementById('nameModal').style.display = 'none';
-                    document.querySelector('.container').style.display = 'block';
 
                     gameState.markedCells.forEach((isMarked, index) => {
                         if (cellElements[index]) {
@@ -378,7 +425,7 @@
                         winMessageElement.innerHTML = `
                             <span class="win-emojis">🍻🥳</span>
                             <h2>Welcome back, ${currentPlayerName}!</h2>
-                            <p>You already BINGO'D! Hope you got that drink!</p>
+                            <p>You already BINGO'D! Hope you got that group therapy and a drink from Jon! 🍻</p>
                             <button class="win-reset-btn" onclick="resetGame()">Start a New Board?</button>`;
                         winMessageElement.classList.add('win-message-active');
                         winMessageElement.style.display = 'flex';
@@ -389,6 +436,11 @@
                         createConfetti();
                     } else {
                          checkForWin();
+                    }
+                    const orientationOverlay = document.getElementById('orientation-message-overlay');
+                    if (window.getComputedStyle(orientationOverlay).display === 'none') {
+                        document.getElementById('nameModal').style.display = 'none';
+                        document.querySelector('.container').style.display = 'block';
                     }
                     return true;
                 }
@@ -444,7 +496,7 @@
             winMessageElement.innerHTML = `
                 <span class="win-emojis">🍻🎉</span>
                 <h2>BINGO, ${currentPlayerName}!</h2>
-                <p>You've crushed the support gauntlet! Time for that drink from Jon!</p>
+                <p>You've crushed the support gauntlet! Time for group therapy and a drink from Jon! 🍻</p>
                 <button class="win-reset-btn" onclick="resetGame()">Play Again?</button>
             `;
             winMessageElement.classList.add('win-message-active');
@@ -520,20 +572,39 @@
                     currentPlayerName = nameInput;
                     document.getElementById('playerNameDisplay').textContent = currentPlayerName;
                     document.getElementById('playerInfo').style.display = 'inline';
-                    document.getElementById('nameModal').style.display = 'none';
-                    document.querySelector('.container').style.display = 'block';
+
+                    const orientationOverlay = document.getElementById('orientation-message-overlay');
+                    if (window.getComputedStyle(orientationOverlay).display === 'none') {
+                        document.getElementById('nameModal').style.display = 'none';
+                        document.querySelector('.container').style.display = 'block';
+                    } else {
+                        document.getElementById('nameModal').style.display = 'none !important';
+                    }
                     resetGame();
                 } else {
                     alert("Please enter your name to join the fun!");
                 }
             });
+
             if (!loadGameState()) {
-                document.getElementById('nameModal').style.display = 'flex';
+                const orientationOverlay = document.getElementById('orientation-message-overlay');
+                if (window.getComputedStyle(orientationOverlay).display === 'none') {
+                     document.getElementById('nameModal').style.display = 'flex';
+                }
                 document.querySelector('.container').style.display = 'none';
             } else {
-                if (currentPlayerName) {
-                     document.querySelector('.container').style.display = 'block';
-                     document.getElementById('nameModal').style.display = 'none';
+                const orientationOverlay = document.getElementById('orientation-message-overlay');
+                if (window.getComputedStyle(orientationOverlay).display === 'none') {
+                    if (currentPlayerName) {
+                         document.querySelector('.container').style.display = 'block';
+                         document.getElementById('nameModal').style.display = 'none';
+                    } else {
+                        document.getElementById('nameModal').style.display = 'flex';
+                        document.querySelector('.container').style.display = 'none';
+                    }
+                } else {
+                    document.querySelector('.container').style.display = 'none !important';
+                    document.getElementById('nameModal').style.display = 'none !important';
                 }
             }
         };
