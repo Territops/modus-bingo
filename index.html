@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adhoc Support BINGO - The Modus Way Dark</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Dark Mode Polished Palette */
+            --bg-primary-dark: #121212;
+            --bg-secondary-dark: #1E1E1E;
+            --bg-tertiary-dark: #2A2A2A;
+            --text-primary-light: #E0E0E0;
+            --text-secondary-light: #B0B0B0;
+            --accent-primary: #BB86FC; /* Vibrant purple accent */
+            --accent-secondary: #03DAC6; /* Teal accent */
+            --accent-error: #CF6679;
+            --header-gradient-start: #3700B3;
+            --header-gradient-end: #6200EE;
+            --marked-cell-gradient-start: var(--accent-secondary);
+            --marked-cell-gradient-end: #018786;
+            --free-space-bg: #424242;
+            --border-color-dark: #333333;
+            --shadow-color-dark: rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Poppins', 'Arial', sans-serif;
+            background: var(--bg-primary-dark);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary-light);
+            overflow-x: hidden;
+        }
+
+        .modal {
+            display: none;
+            position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.75);
+            align-items: center; justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-tertiary-dark);
+            padding: 35px 40px; border-radius: 20px;
+            box-shadow: 0 15px 35px var(--shadow-color-dark);
+            text-align: center; width: 90%; max-width: 480px;
+            animation: slideInModal 0.5s ease-out;
+            border: 1px solid var(--border-color-dark);
+        }
+
+        @keyframes slideInModal {
+            from { transform: translateY(-60px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .modal-content h2 {
+            margin-top: 0; color: var(--text-primary-light); font-size: 1.9em;
+            margin-bottom: 15px;
+        }
+        .modal-content p {
+            color: var(--text-secondary-light); margin-bottom: 25px;
+            font-size: 1.1em; line-height: 1.5;
+        }
+
+        #playerNameInput {
+            width: calc(100% - 28px); padding: 14px; margin-bottom: 25px;
+            border: 1px solid var(--border-color-dark);
+            background-color: var(--bg-secondary-dark);
+            color: var(--text-primary-light);
+            border-radius: 10px; font-size: 1em; font-family: 'Poppins', sans-serif;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        #playerNameInput:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.25);
+            outline: none;
+        }
+
+        #startGameBtn {
+            background: linear-gradient(135deg, var(--accent-primary), var(--header-gradient-end));
+            color: white; border: none; padding: 14px 30px;
+            border-radius: 30px; cursor: pointer; font-size: 1.15em; font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(187, 134, 252, 0.3);
+        }
+        #startGameBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(187, 134, 252, 0.4);
+        }
+
+        .container {
+            display: none;
+            max-width: 950px; margin: 0 auto; background: var(--bg-secondary-dark);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px var(--shadow-color-dark);
+            overflow: hidden; position: relative;
+            border: 1px solid var(--border-color-dark);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--header-gradient-start), var(--header-gradient-end));
+            color: white;
+            text-align: center; padding: 25px 20px; position: relative; z-index: 10;
+        }
+        .header h1 {
+            margin: 0; font-size: 2.3em;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        .subtitle { margin: 12px 0 5px 0; font-size: 1.1em; opacity: 0.9; }
+        .rules {
+            font-size: 0.9em; opacity: 0.85; margin-bottom: 15px; padding: 5px 10px;
+            background-color: rgba(255,255,255,0.08);
+            border-radius: 5px; display: inline-block;
+        }
+        #playerInfo { font-weight: 500; }
+        #playerNameDisplay { font-weight: 700; color: var(--accent-secondary); }
+
+        .bingo-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px;
+            padding: 25px; background: var(--bg-primary-dark);
+            position: relative; z-index: 5;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .bingo-cell {
+            background: var(--bg-tertiary-dark);
+            border: 1px solid var(--border-color-dark);
+            color: var(--text-secondary-light);
+            border-radius: 10px; padding: 14px;
+            text-align: center; font-size: 0.8em; line-height: 1.35; cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); min-height: 90px;
+            display: flex; align-items: center; justify-content: center; position: relative;
+            font-weight: 500; box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+            will-change: transform, opacity;
+        }
+        .bingo-cell:hover {
+            transform: translateY(-4px) scale(1.04);
+            box-shadow: 0 7px 15px rgba(0,0,0,0.3);
+            border-color: var(--accent-primary);
+        }
+        .bingo-cell.marked {
+            background: linear-gradient(135deg, var(--marked-cell-gradient-start), var(--marked-cell-gradient-end));
+            color: var(--bg-primary-dark);
+            font-weight: 700;
+            border-color: var(--accent-secondary);
+            transform: scale(0.97);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+        .bingo-cell.marked::after {
+            content: "✓"; position: absolute; top: 6px; right: 10px; font-size: 1.4em; font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+            color: var(--bg-primary-dark);
+        }
+
+        .free-space {
+            background: var(--free-space-bg);
+            color: var(--text-primary-light);
+            font-weight: 700;
+            border-color: #555 !important;
+            font-size: 0.85em;
+        }
+        .free-space.marked {
+            background: var(--accent-primary) !important;
+            color: white !important;
+            border-color: var(--accent-primary) !important;
+        }
+        .free-space.marked::after {
+            color: white !important;
+        }
+
+        .bingo-cell.exploding {
+            transform-origin: center center;
+            animation: explodeTile 0.9s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+        }
+
+        @keyframes explodeTile {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+            30% { transform: translate(calc(var(--random-x, 0) * 20px), calc(var(--random-y, 0) * 20px - 30px)) scale(1.1); opacity: 1; }
+            100% {
+                transform: translate(calc(var(--random-x, 0) * 60vw), calc(var(--random-y, 0) * 60vh + 100vh))
+                           rotate(calc(var(--random-r, 0) * 270deg)) scale(0.1);
+                opacity: 0;
+            }
+        }
+
+        .win-message { display: none; text-align: center; font-weight: bold; }
+
+        .win-message-active {
+            display: flex !important;
+            flex-direction: column; align-items: center; justify-content: center;
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            width: 90vw; max-width: 550px; height: auto; padding: 30px;
+            background: linear-gradient(145deg, var(--accent-primary), var(--accent-secondary), var(--header-gradient-start));
+            color: white;
+            border-radius: 25px; box-shadow: 0 20px 60px var(--shadow-color-dark);
+            z-index: 3000; opacity: 0;
+            transition: opacity 0.6s ease-out 0.1s, transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) 0.1s;
+            text-align: center; border: 1px solid rgba(255,255,255,0.2);
+        }
+        /* Style for the emoji span */
+        .win-emojis {
+            font-size: 3.5em; /* Adjust size as needed */
+            margin-bottom: 15px;
+            display: block; /* To allow margin-bottom */
+        }
+        .win-message-active h2 {
+            font-size: 2.8em; margin: 0 0 10px 0;
+            text-shadow: 0px 0px 15px rgba(0,0,0,0.5); font-weight: 700;
+        }
+        .win-message-active p { font-size: 1.3em; opacity: 0.95; line-height: 1.5; margin-bottom: 25px; }
+
+        .win-reset-btn {
+            background: rgba(255,255,255,0.2);
+            color: white; border: 1px solid rgba(255,255,255,0.5);
+            padding: 12px 28px; border-radius: 30px;
+            cursor: pointer; font-size: 1.1em; font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 15px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .win-reset-btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: white;
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .confetti {
+            position: fixed; width: 12px; height: 12px;
+            animation: confetti-fall 3s linear infinite; z-index: 4000; border-radius: 2px;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+        }
+
+        .footer {
+            text-align: center; padding: 20px; background: var(--bg-secondary-dark);
+            color: var(--text-secondary-light);
+            font-style: italic; font-size: 0.9em; position: relative; z-index: 10;
+            border-top: 1px solid var(--border-color-dark);
+        }
+
+        .reset-btn { /* Header reset button */
+            background: linear-gradient(135deg, var(--accent-error), #b0304a);
+            color: white; border: none;
+            padding: 12px 28px; border-radius: 28px; cursor: pointer; font-size: 1.05em; font-weight: 600;
+            margin: 15px auto 0 auto; display: block; transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(207, 102, 121, 0.3);
+        }
+        .reset-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(207, 102, 121, 0.4);
+        }
+
+    </style>
+</head>
+<body>
+    <div id="nameModal" class="modal">
+        <div class="modal-content">
+            <h2>🎯 Welcome to BINGO THE MODUS WAY©! 🎯</h2>
+            <p>Ready to tackle some classic support moments? <br>Enter your name to begin!</p>
+            <input type="text" id="playerNameInput" placeholder="Your Support Hero Name">
+            <button id="startGameBtn">Let's Play BINGO!</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎯 BINGO THE MODUS WAY© 🎯</h1>
+            <p class="subtitle">
+                <span id="playerInfo" style="display: none;">Player: <strong id="playerNameDisplay"></strong> | </span>
+                First to 5 in a row gets group therapy and a drink from Jon!
+            </p>
+            <div class="rules">
+                <strong>Bingo Rules:</strong> Mark 5 squares in a row (horizontally, vertically, or diagonally) to win!
+            </div>
+            <button class="reset-btn" onclick="resetGame()">Reset My Board</button>
+        </div>
+
+        <div class="win-message" id="winMessage">
+            <!-- Content dynamically set by JS -->
+        </div>
+
+        <div class="bingo-grid" id="bingoGrid">
+            <div class="bingo-cell" onclick="toggleCell(this)">"Where's the Excel export button?" (it's literally right there)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Where's my saved template?" (they didn't save a template)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Why doesn't it show *everything* by default?" (because your database would cry)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">User filters by 12 fields, selects 5 years of data, complains "it's slow"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">Opened 40k-row export in Excel on a Chromebook — it crashed</div>
+
+            <div class="bingo-cell" onclick="toggleCell(this)">"Can I get this emailed to me every 6 minutes?"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"It's broken" (no context, no screenshot)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">Calls support while randomly clicking filters</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"I only got 2 rows. I expected 40,000." (date filter = yesterday)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"It's missing trips from 2013." (device installed in 2023)</div>
+
+            <div class="bingo-cell" onclick="toggleCell(this)">"Why can't I sort by VIN and tire pressure?" (we don't track tire pressure)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">Complains export is too big, won't uncheck 'Select All'</div>
+            <div class="bingo-cell free-space" onclick="toggleCell(this)">FREE SPACE<br>"Please try clearing your cache and cookies."</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">Incognito mode + disabled cookies = "why doesn't it save?"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"The mileage looks wrong." (comparing odometer to GPS)</div>
+
+            <div class="bingo-cell" onclick="toggleCell(this)">Wants to filter by "vehicles that feel sad"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"This doesn't match my Excel formulas." (their Excel is wrong)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"This data doesn't make sense." (It's fleet data. It speaks fleet. Not human.)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Can I get live data?" (uses once-a-day asset trackers)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">Exports same report 47 times "to make sure it's right"</div>
+
+            <div class="bingo-cell" onclick="toggleCell(this)">"Why is one vehicle not reporting?" (parked for 3 weeks)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Can I get idling by weather condition?"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Can we add PTO usage to this safety report?"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Why doesn't this show driver birthdays?"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"It says harsh braking, but he swears it wasn't."</div>
+        </div>
+
+        <div class="footer">
+            May the odds be ever in your favor. And may your tickets be detailed. 🙏
+        </div>
+    </div>
+
+    <script>
+        let currentPlayerName = '';
+        const cellElements = [];
+        let winShown = false;
+        // Emojis will be used directly in the win message HTML
+
+        function setupBoard() {
+            document.querySelectorAll('.bingo-cell').forEach((cell, index) => {
+                cellElements[index] = cell;
+            });
+        }
+
+        function saveGameState() {
+            if (!currentPlayerName) return;
+            const markedStates = cellElements.map(cell => cell.classList.contains('marked'));
+            const gameState = {
+                name: currentPlayerName,
+                markedCells: markedStates,
+                hasWon: winShown
+            };
+            try {
+                localStorage.setItem('bingoModusWayDarkGameState', JSON.stringify(gameState));
+            } catch (e) {
+                console.error("Failed to save game state:", e);
+            }
+        }
+
+        function loadGameState() {
+            try {
+                const savedData = localStorage.getItem('bingoModusWayDarkGameState');
+                if (savedData) {
+                    const gameState = JSON.parse(savedData);
+                    currentPlayerName = gameState.name || "Bingo Player";
+                    winShown = gameState.hasWon || false;
+
+                    document.getElementById('playerNameDisplay').textContent = currentPlayerName;
+                    document.getElementById('playerInfo').style.display = 'inline';
+                    document.getElementById('nameModal').style.display = 'none';
+                    document.querySelector('.container').style.display = 'block';
+
+                    gameState.markedCells.forEach((isMarked, index) => {
+                        if (cellElements[index]) {
+                            if (isMarked) cellElements[index].classList.add('marked');
+                            else cellElements[index].classList.remove('marked');
+                        }
+                    });
+
+                    if (winShown) {
+                        const winMessageElement = document.getElementById('winMessage');
+                        winMessageElement.innerHTML = `
+                            <span class="win-emojis">🍻🥳</span>
+                            <h2>Welcome back, ${currentPlayerName}!</h2>
+                            <p>You already BINGO'D! Hope you got that drink!</p>
+                            <button class="win-reset-btn" onclick="resetGame()">Start a New Board?</button>`;
+                        winMessageElement.classList.add('win-message-active');
+                        winMessageElement.style.display = 'flex';
+                        winMessageElement.style.opacity = '1';
+                        winMessageElement.style.transform = 'translate(-50%, -50%) scale(1)';
+                        document.getElementById('bingoGrid').style.opacity = '0';
+                        document.getElementById('bingoGrid').style.pointerEvents = 'none';
+                        createConfetti();
+                    } else {
+                         checkForWin();
+                    }
+                    return true;
+                }
+            } catch (e) {
+                console.error("Failed to load game state:", e);
+                localStorage.removeItem('bingoModusWayDarkGameState');
+            }
+            return false;
+        }
+
+        function toggleCell(cellElement) {
+            if (winShown && !cellElement.classList.contains('free-space')) return;
+            if (winShown && cellElement.classList.contains('free-space') && cellElement.classList.contains('marked')) return;
+
+            cellElement.classList.toggle('marked');
+            saveGameState();
+            if (!winShown) {
+                checkForWin();
+            }
+        }
+
+        function checkForWin() {
+            if (winShown || cellElements.length === 0) return;
+
+            const grid = [];
+            let hasWonThisCheck = false;
+
+            for (let i = 0; i < 5; i++) {
+                grid[i] = [];
+                for (let j = 0; j < 5; j++) {
+                    const cellIndex = i * 5 + j;
+                    grid[i][j] = cellElements[cellIndex] ? cellElements[cellIndex].classList.contains('marked') : false;
+                }
+            }
+
+            for (let i = 0; i < 5; i++) { if (grid[i].every(cell => cell)) { hasWonThisCheck = true; break; } }
+            if (!hasWonThisCheck) { for (let j = 0; j < 5; j++) { if (grid.every(row => row[j])) { hasWonThisCheck = true; break; } } }
+            if (!hasWonThisCheck) { let mainDiagonalWin = true; for (let i = 0; i < 5; i++) { if (!grid[i][i]) { mainDiagonalWin = false; break; } } if (mainDiagonalWin) hasWonThisCheck = true; }
+            if (!hasWonThisCheck) { let antiDiagonalWin = true; for (let i = 0; i < 5; i++) { if (!grid[i][4 - i]) { antiDiagonalWin = false; break; } } if (antiDiagonalWin) hasWonThisCheck = true; }
+
+            if (hasWonThisCheck) {
+                showWin();
+            }
+        }
+
+        function showWin() {
+            if (winShown) return;
+            winShown = true;
+
+            const winMessageElement = document.getElementById('winMessage');
+            const bingoGrid = document.getElementById('bingoGrid');
+
+            winMessageElement.innerHTML = `
+                <span class="win-emojis">🍻🎉</span>
+                <h2>BINGO, ${currentPlayerName}!</h2>
+                <p>You've crushed the support gauntlet! Time for that drink from Jon!</p>
+                <button class="win-reset-btn" onclick="resetGame()">Play Again?</button>
+            `;
+            winMessageElement.classList.add('win-message-active');
+
+            const cellsToAnimate = bingoGrid.querySelectorAll('.bingo-cell');
+            cellsToAnimate.forEach(cell => {
+                cell.style.setProperty('--random-x', (Math.random() - 0.5) * 2);
+                cell.style.setProperty('--random-y', (Math.random() - 0.5) * 2);
+                cell.style.setProperty('--random-r', (Math.random() - 0.5) * 2);
+                cell.classList.add('exploding');
+            });
+
+            setTimeout(() => {
+                bingoGrid.style.opacity = '0';
+                bingoGrid.style.pointerEvents = 'none';
+                winMessageElement.style.display = 'flex';
+                winMessageElement.style.opacity = '1';
+                winMessageElement.style.transform = 'translate(-50%, -50%) scale(1)';
+                createConfetti();
+            }, 900);
+            saveGameState();
+        }
+
+        function createConfetti() {
+            const confettiContainer = document.body;
+            const colors = ['#BB86FC', '#03DAC6', '#F06292', '#FFDE03', '#FF0266', '#00CF98', '#7F00FF', '#00E5FF'];
+            for (let i = 0; i < 150; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    const animDuration = (Math.random() * 3 + 2.5);
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    confetti.style.animationDuration = animDuration + 's';
+                    confetti.style.transform = `scale(${Math.random() * 0.6 + 0.6})`;
+                    confetti.style.opacity = Math.random() * 0.5 + 0.7;
+                    confettiContainer.appendChild(confetti);
+                    setTimeout(() => {
+                        if (confetti.parentNode) confetti.parentNode.removeChild(confetti);
+                    }, (animDuration + parseFloat(confetti.style.animationDelay)) * 1000 + 500);
+                }, i * 15);
+            }
+        }
+
+        function resetGame() {
+            winShown = false;
+            const bingoGrid = document.getElementById('bingoGrid');
+            const winMessageElement = document.getElementById('winMessage');
+            cellElements.forEach(cell => {
+                cell.classList.remove('marked', 'exploding');
+                cell.style.cssText = '';
+            });
+            bingoGrid.style.opacity = '1';
+            bingoGrid.style.pointerEvents = 'auto';
+            winMessageElement.style.display = 'none';
+            winMessageElement.classList.remove('win-message-active');
+            winMessageElement.style.opacity = '0';
+            winMessageElement.style.transform = 'translate(-50%, -50%) scale(0.8)';
+            document.querySelectorAll('.confetti').forEach(c => c.parentNode ? c.parentNode.removeChild(c) : null);
+            const freeSpace = document.querySelector('.free-space');
+            if (freeSpace) {
+                 freeSpace.classList.add('marked');
+            }
+            saveGameState();
+        }
+
+        window.onload = function() {
+            setupBoard();
+            document.getElementById('startGameBtn').addEventListener('click', () => {
+                const nameInput = document.getElementById('playerNameInput').value.trim();
+                if (nameInput) {
+                    currentPlayerName = nameInput;
+                    document.getElementById('playerNameDisplay').textContent = currentPlayerName;
+                    document.getElementById('playerInfo').style.display = 'inline';
+                    document.getElementById('nameModal').style.display = 'none';
+                    document.querySelector('.container').style.display = 'block';
+                    resetGame();
+                } else {
+                    alert("Please enter your name to join the fun!");
+                }
+            });
+            if (!loadGameState()) {
+                document.getElementById('nameModal').style.display = 'flex';
+                document.querySelector('.container').style.display = 'none';
+            } else {
+                if (currentPlayerName) {
+                     document.querySelector('.container').style.display = 'block';
+                     document.getElementById('nameModal').style.display = 'none';
+                }
+            }
+        };
+    </script>
+</body>
+</html>
