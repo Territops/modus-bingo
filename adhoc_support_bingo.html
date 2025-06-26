@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adhoc Support BINGO</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            margin: 10px 0 0 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        
+        .bingo-cell {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            font-size: 0.85em;
+            line-height: 1.3;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .bingo-cell:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .bingo-cell.marked {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            border-color: #44a08d;
+            transform: scale(0.95);
+        }
+        
+        .bingo-cell.marked::after {
+            content: "✓";
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .free-space {
+            background: linear-gradient(135deg, #ffd700, #ffb347) !important;
+            color: #333;
+            font-weight: bold;
+            border-color: #ffd700 !important;
+        }
+        
+        .win-message {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #00c851, #4caf50);
+            color: white;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: none;
+            animation: celebration 0.6s ease-in-out;
+        }
+        
+        @keyframes celebration {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        @keyframes rainbow {
+            0% { background: linear-gradient(135deg, #ff6b6b, #ffa500); }
+            20% { background: linear-gradient(135deg, #ffa500, #ffeb3b); }
+            40% { background: linear-gradient(135deg, #ffeb3b, #4caf50); }
+            60% { background: linear-gradient(135deg, #4caf50, #2196f3); }
+            80% { background: linear-gradient(135deg, #2196f3, #9c27b0); }
+            100% { background: linear-gradient(135deg, #9c27b0, #ff6b6b); }
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f0f0;
+            animation: confetti-fall 3s linear infinite;
+            z-index: 1000;
+        }
+        
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        .celebration-mode {
+            animation: shake 0.5s ease-in-out 3;
+        }
+        
+        .celebration-mode .header {
+            animation: rainbow 2s ease-in-out infinite;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .reset-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 BINGO THE MODUS WAY© 🎯</h1>
+            <p class="subtitle">First to 5 in a row gets group therapy and a drink from Jon!</p>
+            <button class="reset-btn" onclick="resetGame()">Reset Game</button>
+        </div>
+        
+        <div class="win-message" id="winMessage">
+            🍻 BINGO THE MODUS WAY! Collect your drink from Jon! 🍻
+        </div>
+        
+        <div class="bingo-grid" id="bingoGrid">
+            <div class="bingo-cell" onclick="toggleCell(this)">"Where's the Excel export button?" (it's literally right there)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Where's my saved template?" (they didn't save a template)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Why doesn't it show *everything* by default?" (because your database would cry)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">User filters by 12 fields, selects 5 years of data, complains "it's slow"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">Opened 40k-row export in Excel on a Chromebook — it crashed</div>
+            
+            <div class="bingo-cell" onclick="toggleCell(this)">"Can I get this emailed to me every 6 minutes?"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"It's broken" (no context, no screenshot)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">Calls support while randomly clicking filters</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"I only got 2 rows. I expected 40,000." (date filter = yesterday)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"It's missing trips from 2013." (device installed in 2023)</div>
+            
+            <div class="bingo-cell" onclick="toggleCell(this)">"Why can't I sort by VIN and tire pressure?" (we don't track tire pressure)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">Complains export is too big, won't uncheck 'Select All'</div>
+            <div class="bingo-cell free-space" onclick="toggleCell(this)">FREE SPACE<br>"Please try clearing your cache and cookies."</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">Incognito mode + disabled cookies = "why doesn't it save?"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"The mileage looks wrong." (comparing odometer to GPS)</div>
+            
+            <div class="bingo-cell" onclick="toggleCell(this)">Wants to filter by "vehicles that feel sad"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"This doesn't match my Excel formulas." (their Excel is wrong)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"This data doesn't make sense." (It's fleet data. It speaks fleet. Not human.)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Can I get live data?" (uses once-a-day asset trackers)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">Exports same report 47 times "to make sure it's right"</div>
+            
+            <div class="bingo-cell" onclick="toggleCell(this)">"Why is one vehicle not reporting?" (parked for 3 weeks)</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Can I get idling by weather condition?"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Can we add PTO usage to this safety report?"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"Why doesn't this show driver birthdays?"</div>
+            <div class="bingo-cell" onclick="toggleCell(this)">"It says harsh braking, but he swears it wasn't."</div>
+        </div>
+        
+        <div class="footer">
+            May the odds be ever in your favor. And may your tickets be detailed. 🙏
+        </div>
+    </div>
+
+    <script>
+        function toggleCell(cell) {
+            cell.classList.toggle('marked');
+            checkForWin();
+        }
+        
+        function checkForWin() {
+            const cells = document.querySelectorAll('.bingo-cell');
+            const grid = [];
+            
+            // Convert to 5x5 grid
+            for (let i = 0; i < 5; i++) {
+                grid[i] = [];
+                for (let j = 0; j < 5; j++) {
+                    grid[i][j] = cells[i * 5 + j].classList.contains('marked');
+                }
+            }
+            
+            // Check rows
+            for (let i = 0; i < 5; i++) {
+                if (grid[i].every(cell => cell)) {
+                    showWin();
+                    return;
+                }
+            }
+            
+            // Check columns
+            for (let j = 0; j < 5; j++) {
+                if (grid.every(row => row[j])) {
+                    showWin();
+                    return;
+                }
+            }
+            
+            // Check diagonals
+            if (grid.every((row, i) => row[i])) {
+                showWin();
+                return;
+            }
+            
+            if (grid.every((row, i) => row[4 - i])) {
+                showWin();
+                return;
+            }
+        }
+        
+        function showWin() {
+            document.getElementById('winMessage').style.display = 'block';
+            
+            // Add celebration mode to container
+            document.querySelector('.container').classList.add('celebration-mode');
+            
+            // Create confetti
+            createConfetti();
+            
+            // Show alert after animations start
+            setTimeout(() => {
+                alert('🎉 BINGO! You\'ve survived the support gauntlet! Time to collect your drink from Jon! 🍻');
+            }, 1000);
+            
+            // Remove celebration mode after 6 seconds
+            setTimeout(() => {
+                document.querySelector('.container').classList.remove('celebration-mode');
+            }, 6000);
+        }
+        
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#ffa500', '#ffeb3b', '#4caf50', '#2196f3', '#9c27b0', '#ff69b4', '#00c851'];
+            
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 2 + 's';
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    
+                    document.body.appendChild(confetti);
+                    
+                    // Remove confetti after animation
+                    setTimeout(() => {
+                        if (confetti.parentNode) {
+                            confetti.parentNode.removeChild(confetti);
+                        }
+                    }, 5000);
+                }, i * 100);
+            }
+        }
+        
+        function resetGame() {
+            document.querySelectorAll('.bingo-cell').forEach(cell => {
+                cell.classList.remove('marked');
+            });
+            document.getElementById('winMessage').style.display = 'none';
+            document.querySelector('.container').classList.remove('celebration-mode');
+            
+            // Remove any lingering confetti
+            document.querySelectorAll('.confetti').forEach(confetti => {
+                if (confetti.parentNode) {
+                    confetti.parentNode.removeChild(confetti);
+                }
+            });
+        }
+        
+        // Auto-mark the free space
+        window.onload = function() {
+            document.querySelector('.free-space').classList.add('marked');
+        };
+    </script>
+</body>
+</html>
